@@ -1,9 +1,14 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../api/axiosConfig";
+import api from "../api/axiosConfig";
+import { AuthContext } from "../context/AuthContext";
 
 function Register() {
   const navigate = useNavigate();
+
+  // Bring in login function from AuthContext
+  const { login } = useContext(AuthContext);
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -17,25 +22,32 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await API.post("register/", form);
+      //  Register the user
+      await api.post("register/", form);
 
-      // Auto login
-      const loginRes = await API.post("login/", {
+      //  Auto-login immediately after registration
+      const res = await api.post("login/", {
         email: form.email,
         password: form.password,
       });
 
-      localStorage.setItem("access", loginRes.data.access);
-      localStorage.setItem("refresh", loginRes.data.refresh);
-      localStorage.setItem("role", loginRes.data.user.role);
+      //  Save tokens + role in localStorage
+      localStorage.setItem("access", res.data.access);
+      localStorage.setItem("refresh", res.data.refresh);
+      localStorage.setItem("role", res.data.user.role);
 
-      if (loginRes.data.user.role === "vendor") {
+      //  Update AuthContext (so Header updates right away)
+      login(res.data.user);
+
+      //  Redirect based on role
+      if (res.data.user.role === "vendor") {
         navigate("/vendor/dashboard");
       } else {
-        navigate("/shop");
+        navigate("/customer/dashboard");
       }
     } catch (err) {
-      alert("Error: " + JSON.stringify(err.response.data));
+      console.error("Register error:", err.response?.data || err.message);
+      alert("Error: " + JSON.stringify(err.response?.data || err.message));
     }
   };
 
@@ -43,6 +55,7 @@ function Register() {
     <div className="container mt-5">
       <h2 className="mb-4">Register</h2>
       <form className="card p-4 shadow" onSubmit={handleSubmit}>
+        {/* Email */}
         <div className="mb-3">
           <label className="form-label">Email</label>
           <input
@@ -55,6 +68,7 @@ function Register() {
           />
         </div>
 
+        {/* Password */}
         <div className="mb-3">
           <label className="form-label">Password</label>
           <input
@@ -67,6 +81,7 @@ function Register() {
           />
         </div>
 
+        {/* Confirm Password */}
         <div className="mb-3">
           <label className="form-label">Confirm Password</label>
           <input
@@ -79,6 +94,7 @@ function Register() {
           />
         </div>
 
+        {/* Role Select */}
         <div className="mb-3">
           <label className="form-label">Role</label>
           <select
@@ -92,6 +108,7 @@ function Register() {
           </select>
         </div>
 
+        {/* Submit */}
         <button type="submit" className="btn btn-primary w-100">
           Register
         </button>

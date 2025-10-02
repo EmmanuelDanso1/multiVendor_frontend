@@ -33,7 +33,7 @@ function Login() {
       if (res.data.user.role === "vendor") {
         navigate("/vendor/dashboard");
       } else {
-        navigate("/shop");
+        navigate("/customer/dashboard"); 
       }
     } catch (err) {
       console.error("Login failed:", err);
